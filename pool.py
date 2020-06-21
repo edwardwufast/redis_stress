@@ -9,7 +9,7 @@ import redis
 
 
 RECORD_DIR = sys.argv[1]
-TEST_TIME = 10800
+TEST_TIME = int(sys.argv[4])
 KEY_VALUE = "hello"
 REDIS_SERVER = sys.argv[2]
 POOL_SIZE = int(sys.argv[3])
@@ -40,6 +40,7 @@ def create_dir():
         os.makedirs(RECORD_DIR)
 
 if __name__ == '__main__':
+    echo "RECORD_DIR REDIS_SERVER POOL_SIZE TEST_TIME"
     create_dir()
     pool = redis.ConnectionPool(host=REDIS_SERVER, port=6379, db=0, max_connections=POOL_SIZE)
     client = redis.Redis(connection_pool=pool)
