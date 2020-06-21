@@ -36,11 +36,8 @@ def send_psetex(client):
         client.psetex('key', 1000, KEY_VALUE)
 
 def create_dir():
-    try:
+    if not os.path.exists(RECORD_DIR):
         os.makedirs(RECORD_DIR)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
 
 if __name__ == '__main__':
     create_dir()
