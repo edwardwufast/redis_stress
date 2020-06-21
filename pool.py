@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import threading
@@ -6,13 +7,10 @@ from datetime import datetime
 
 import redis
 
-# 'redisconnect.ryi7vr.0001.apne1.cache.amazonaws.com'
-# 172.31.31.81
 
 RECORD_DIR = sys.argv[1]
 TEST_TIME = 10800
 KEY_VALUE = "hello"
-#REDIS_SERVER = 'redisconnect.ryi7vr.0001.apne1.cache.amazonaws.com'
 REDIS_SERVER = sys.argv[2]
 POOL_SIZE = int(sys.argv[3])
 
@@ -37,9 +35,15 @@ def send_psetex(client):
     while time.time() < timeout_start + TEST_TIME:
         client.psetex('key', 1000, KEY_VALUE)
 
-
+def create_dir():
+    try:
+        os.makedirs(RECORD_DIR)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 if __name__ == '__main__':
+    create_dir()
     pool = redis.ConnectionPool(host=REDIS_SERVER, port=6379, db=0, max_connections=POOL_SIZE)
     client = redis.Redis(connection_pool=pool)
     th = threading.Thread(target=send_psetex, args=(client,))
