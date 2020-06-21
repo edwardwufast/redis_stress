@@ -40,7 +40,7 @@ def create_dir():
         os.makedirs(RECORD_DIR)
 
 if __name__ == '__main__':
-    echo "RECORD_DIR REDIS_SERVER POOL_SIZE TEST_TIME"
+    print( "RECORD_DIR REDIS_SERVER POOL_SIZE TEST_TIME")
     create_dir()
     pool = redis.ConnectionPool(host=REDIS_SERVER, port=6379, db=0, max_connections=POOL_SIZE)
     client = redis.Redis(connection_pool=pool)
