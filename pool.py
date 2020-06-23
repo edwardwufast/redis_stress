@@ -12,7 +12,7 @@ RECORD_DIR = sys.argv[1]
 TEST_TIME = int(sys.argv[4])
 KEY_VALUE = "hello"
 REDIS_SERVER = sys.argv[2]
-POOL_SIZE = int(sys.argv[3])
+CONNECTION_NUM = int(sys.argv[3])
 
 def save_info(client, filename):
     with open(RECORD_DIR+"/" + filename, 'w+') as info_file:
@@ -40,14 +40,14 @@ def create_dir():
         os.makedirs(RECORD_DIR)
 
 if __name__ == '__main__':
-    print( "RECORD_DIR REDIS_SERVER POOL_SIZE TEST_TIME")
+    print( "RECORD_DIR REDIS_SERVER CONNECTION_NUM TEST_TIME")
     create_dir()
-    pool = redis.ConnectionPool(host=REDIS_SERVER, port=6379, db=0, max_connections=POOL_SIZE)
+    pool = redis.ConnectionPool(host=REDIS_SERVER, port=6379, db=0, max_connections=1000)
     client = redis.Redis(connection_pool=pool)
     th = threading.Thread(target=send_psetex, args=(client,))
     save_info(client, 'begion')
     threads = list()
-    for index in range(8):
+    for index in range(CONNECTION_NUM):
         logging.info("Main    : create and start thread %d.", index)
         x = threading.Thread(target=send_psetex, args=(client,))
         threads.append(x)
