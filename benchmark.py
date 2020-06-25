@@ -67,7 +67,7 @@ class send_evalsha(commandset):
             self.client.evalsha(self.script_id, 0)
 
 
-def create_dir():
-    if not os.path.exists(RECORD_DIR):
-        os.makedirs(RECORD_DIR)
+def create_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 

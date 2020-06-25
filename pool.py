@@ -35,11 +35,23 @@ def send_psetex(client):
     while time.time() < timeout_start + TEST_TIME:
         client.psetex('key', 1000, KEY_VALUE)
 
+def send_evalsha(client, script_id):
+    while time.time() < timeout_start + TEST_TIME:
+        client.evalsha(script_id, 0)
+
+def load_script(client):
+    script='PSETEX key 1000 hello'
+    script_id = client.script_load(script)
+    return script_id
+
+
+
 def create_dir():
     if not os.path.exists(RECORD_DIR):
         os.makedirs(RECORD_DIR)
 
 if __name__ == '__main__':
+
     print( "RECORD_DIR REDIS_SERVER CONNECTION_NUM TEST_TIME")
     create_dir()
     pool = redis.ConnectionPool(host=REDIS_SERVER, port=6379, db=0, max_connections=1000)
