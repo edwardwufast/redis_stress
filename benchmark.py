@@ -28,6 +28,7 @@ class benchmark:
             now = datetime.now()
             current_time = now.strftime("%Y-%m-%d %H:%M:%S")
             info_file.write(str(current_time) + "\n\n")
+            info_file.write('server: ' + str(self.redis_server) + "\n\n")
             info_file.write(str(info_result) + "\n\n")
             info_file.write(str(commandstats_result) + "\n\n")
 
