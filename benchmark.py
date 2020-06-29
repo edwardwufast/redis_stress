@@ -42,6 +42,8 @@ class benchmark:
     def save_slow(self, filename):
         with open(self.record_dir+"/" + filename, 'w+') as slow_file:
             slow_result=self.client.slowlog_get(num=128)
+            for slowlog in slow_result:
+                slowlog['start_time']= datetime.utcfromtimestamp(int(slowlog['start_time'])).strftime('%Y-%m-%d %H:%M:%S UTC')
             slow_file.write(str(slow_result) + "\n\n")
 
     def run(self):
