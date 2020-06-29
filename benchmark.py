@@ -3,9 +3,11 @@ import sys
 import time
 import threading
 import logging
+import random
 from datetime import datetime
 
 import redis
+from rediscluster import RedisCluster
 
 
 
@@ -20,6 +22,11 @@ class benchmark:
     def init_client(self):
         pool = redis.ConnectionPool(host=self.redis_server, port=6379, db=0)
         self.client = redis.Redis(connection_pool=pool)
+
+    def init_cluster_client(self):
+        startup_nodes = [{"host": self.redis_server, "port": "6379"}]
+        self.client = RedisCluster(startup_nodes=startup_nodes, decode_responses=True, skip_full_coverage_check=True)
+
 
     def save_info(self, filename):
         with open(self.record_dir + "/" + filename, 'w+') as info_file:
@@ -66,6 +73,13 @@ class send_evalsha(commandset):
         while time.time() < timeout_start + self.test_time:
             self.client.evalsha(self.script_id, 0)
 
+class send_set_randomkey(commandset):
+
+    def start(self):
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            random_number = random.random()
+            self.client.set('key:' + str(random_number), random_number)
 
 def create_dir(directory):
     if not os.path.exists(directory):

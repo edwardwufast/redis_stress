@@ -2,7 +2,9 @@ import time
 import argparse
 import threading
 
-from benchmark import benchmark, send_psetex, send_evalsha, create_dir
+from benchmark import benchmark, send_psetex, send_evalsha, create_dir, send_set_randomkey
+
+benchmark_dict = {'send_psetex': send_psetex, 'send_evalsha': send_evalsha, 'send_set_randomkey': send_set_randomkey}
 
 parser = argparse.ArgumentParser(description='Redis benchmark')
 
@@ -10,18 +12,26 @@ parser.add_argument('-s', metavar='redis_server_IP', required=True)
 parser.add_argument('-c', metavar='connection', type=int, required=True)
 parser.add_argument('-d', metavar='record_directory', required=True)
 parser.add_argument('-t', metavar='test_time', type=int, required=True)
+parser.add_argument('-b', metavar='benchmark', choices=[key for key in benchmark_dict], required=True)
+parser.add_argument('-C', help='cluster mode', default=False, action='store_true', required=False)
 
 args = parser.parse_args()
+
 
 if __name__ == '__main__':
     server = args.s
     connection = args.c
     record_directory = args.d
     test_time = args.t
+    benchmark_test = benchmark_dict[args.b]
+    cluster_mode_enable = args.C
 
     create_dir(record_directory)
-    bh = benchmark(record_directory, test_time, send_psetex, server)
-    bh.init_client()
+    bh = benchmark(record_directory, test_time, benchmark_test, server)
+    if cluster_mode_enable:
+        bh.init_cluster_client()
+    else:
+        bh.init_client()
     bh.save_info('begin')
     threads = list()
     for index in range(connection):
