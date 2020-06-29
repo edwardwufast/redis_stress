@@ -61,17 +61,16 @@ class send_psetex(commandset):
             self.client.psetex('key', 1000, 'hello')
     
 class send_evalsha(commandset):
-    
-    def load_script(self, script):
-        self.script=script
-        self.script_id = self.client.script_load(script)
+    script=''    
+    script_id=''
+    def load_script(script):
+        send_evalsha.script = script
 
     def start(self):
-        script="redis.call('psetex', 'key', 1000, 'hello')"
-        self.load_script(script)
+        send_evalsha.script_id = self.client.script_load(send_evalsha.script)
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
-            self.client.evalsha(self.script_id, 0)
+            self.client.evalsha(send_evalsha.script_id, 0)
 
 class send_set_randomkey(commandset):
 
