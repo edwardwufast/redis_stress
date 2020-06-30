@@ -5,3 +5,4 @@ pytz==2020.1
 redis==3.0.1
 redis-py-cluster==2.0.0
 six==1.15.0
+openpyxl==3.0.4

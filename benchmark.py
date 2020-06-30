@@ -30,16 +30,22 @@ class benchmark:
 
 
     def save_info(self, filename):
-        with open(self.record_dir + "/" + filename, 'w+') as info_file:
-            info_result=self.client.info()
-            import pdb;pdb.set_trace()
-            commandstats_result=self.client.info(section='commandstats')
+        main_path = self.record_dir + "/" + filename
+        with open(main_path, 'w+') as info_file:
+            # save current timestamp 
             now = datetime.now()
             current_time = now.strftime("%Y-%m-%d %H:%M:%S")
             info_file.write(str(current_time) + "\n\n")
-            info_file.write('server: ' + str(self.redis_server) + "\n\n")
-            info_file.write(str(info_result) + "\n\n")
-            info_file.write(str(commandstats_result) + "\n\n")
+            # get info commandstats
+            info_result=self.client.info()
+            info_result.pop('db0')
+            info_df = pd.DataFrame(info_result, index={"value"})
+            commandstats_result = self.client.info(section='commandstats')
+            commandstats_df = pd.DataFrame(commandstats_result)
+
+            # write excel
+            info_df.to_excel(main_path + '_info.xlsx')
+            commandstats_df.to_excel(main_path + '_commandstats.xlsx')
 
     def save_slow(self, filename):
         with open(self.record_dir+"/" + filename, 'w+') as slow_file:
