@@ -7,6 +7,7 @@ import random
 from datetime import datetime
 
 import redis
+import pandas as pd
 from rediscluster import RedisCluster
 
 
@@ -31,6 +32,7 @@ class benchmark:
     def save_info(self, filename):
         with open(self.record_dir + "/" + filename, 'w+') as info_file:
             info_result=self.client.info()
+            import pdb;pdb.set_trace()
             commandstats_result=self.client.info(section='commandstats')
             now = datetime.now()
             current_time = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -41,10 +43,11 @@ class benchmark:
 
     def save_slow(self, filename):
         with open(self.record_dir+"/" + filename, 'w+') as slow_file:
-            slow_result=self.client.slowlog_get(num=128)
+            slow_result=self.client.slowlog_get()
             for slowlog in slow_result:
                 slowlog['start_time']= datetime.utcfromtimestamp(int(slowlog['start_time'])).strftime('%Y-%m-%d %H:%M:%S UTC')
             slow_file.write(str(slow_result) + "\n\n")
+            slow_file.write("Total: " + str(len(slow_result)))
 
     def reset_slow(self):
         self.client.slowlog_reset()
