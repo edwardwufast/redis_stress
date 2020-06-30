@@ -42,6 +42,7 @@ if __name__ == '__main__':
         bh.init_cluster_client()
     else:
         bh.init_client()
+    bh.reset_slow()
     bh.save_info('begin')
     threads = list()
     for index in range(connection):

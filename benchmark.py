@@ -46,6 +46,9 @@ class benchmark:
                 slowlog['start_time']= datetime.utcfromtimestamp(int(slowlog['start_time'])).strftime('%Y-%m-%d %H:%M:%S UTC')
             slow_file.write(str(slow_result) + "\n\n")
 
+    def reset_slow(self):
+        self.client.slowlog_reset()
+
     def run(self):
         self.redis_commandset(self.client, self.test_time).start()
 
