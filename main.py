@@ -2,7 +2,9 @@ import time
 import argparse
 import threading
 
-from benchmark import benchmark, send_psetex, send_evalsha, create_dir, send_set_randomkey
+import pandas as pd
+
+from benchmark import benchmark, send_psetex, send_evalsha, create_dir, send_set_randomkey, multiple_dfs
 
 benchmark_dict = {'send_psetex': send_psetex, 'send_evalsha': send_evalsha, 'send_set_randomkey': send_set_randomkey}
 
@@ -43,18 +45,24 @@ if __name__ == '__main__':
     else:
         bh.init_client()
     bh.reset_slow()
-    bh.save_info('begin')
+    start_time = bh.get_time()
+    commandstats_df_begin = bh.get_commandstats()
     threads = list()
     for index in range(connection):
         x = threading.Thread(target=bh.run)
         threads.append(x)
         x.start()
     time.sleep(10)
-    bh.save_info('middle')
+    info_df_middle = bh.get_info()
     for index, thread in enumerate(threads):
         thread.join()
-    bh.save_info('end')
-    bh.save_slow('slow')
+    end_time = bh.get_time()
+    time_df = pd.DataFrame([start_time, end_time, test_time], index=['start_time', 'end_time', 'test_time'])
+    commandstats_df_end = bh.get_commandstats()
+    commandstats_df_diff = commandstats_df_end - commandstats_df_begin
+    commandstats_df_report = pd.concat([commandstats_df_begin, commandstats_df_end, commandstats_df_diff], axis=1, sort=False)
+    slow_df = bh.get_slow()
+    multiple_dfs([time_df, info_df_middle, commandstats_df_report], 'test', record_directory + '/file.xlsx', 1)
 
 
 

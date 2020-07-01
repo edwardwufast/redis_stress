@@ -37,7 +37,7 @@ class benchmark:
             current_time = now.strftime("%Y-%m-%d %H:%M:%S")
             info_file.write(str(current_time) + "\n\n")
             # get info commandstats
-            info_result=self.client.info()
+            info_result = self.client.info()
             info_result.pop('db0')
             info_df = pd.DataFrame(info_result, index={"value"})
             commandstats_result = self.client.info(section='commandstats')
@@ -46,6 +46,29 @@ class benchmark:
             # write excel
             info_df.to_excel(main_path + '_info.xlsx')
             commandstats_df.to_excel(main_path + '_commandstats.xlsx')
+
+    def get_time(self):
+        now = datetime.now()
+        current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+        return current_time
+
+    def get_info(self):
+        info_result = self.client.info()
+        info_result.pop('db0')
+        info_df = pd.DataFrame(info_result, index={"value"}).transpose()
+        return info_df
+
+    def get_commandstats(self):
+        commandstats_result = self.client.info(section='commandstats')
+        commandstats_df = pd.DataFrame(commandstats_result).transpose()
+        return commandstats_df
+
+    def get_slow(self):
+        slow_result = self.client.slowlog_get()
+        for slowlog in slow_result:
+             slowlog['start_time']= datetime.utcfromtimestamp(int(slowlog['start_time'])).strftime('%Y-%m-%d %H:%M:%S UTC')
+        slowlog_df = pd.DataFrame(slow_result)
+        return slowlog_df
 
     def save_slow(self, filename):
         with open(self.record_dir+"/" + filename, 'w+') as slow_file:
@@ -98,4 +121,12 @@ class send_set_randomkey(commandset):
 def create_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+def multiple_dfs(df_list, sheets, file_name, spaces):
+    writer = pd.ExcelWriter(file_name,engine='xlsxwriter')   
+    col = 0
+    for dataframe in df_list:
+        dataframe.to_excel(writer,sheet_name=sheets,startrow=0, startcol=col)   
+        col = col + len(dataframe.columns) + spaces + 1
+    writer.save()
 
