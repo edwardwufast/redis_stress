@@ -51,6 +51,7 @@ class benchmark:
         now = datetime.now()
         current_time = now.strftime("%Y-%m-%d %H:%M:%S")
         return current_time
+    
 
     def get_info(self):
         info_result = self.client.info()
