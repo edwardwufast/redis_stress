@@ -105,7 +105,7 @@ class send_psetex_no_pool(commandset):
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             time.sleep(0.4)
-            execute_low_level('psetex', 'key', 1000, 'hello', host=self.redis_server, port=6379)
+            execute_low_level(750, 0.1, 'psetex', 'key', 1000, 'hello', host=self.redis_server, port=6379)
 
 class send_evalsha(commandset):
     script=''    
@@ -132,7 +132,7 @@ class send_evalsha_no_pool(commandset):
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             time.sleep(0.4)
-            execute_low_level('evalsha', send_evalsha.script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
+            execute_low_level(750, 0.04, 'evalsha', send_evalsha.script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
 
 
 class send_set_randomkey(commandset):
@@ -155,12 +155,12 @@ def multiple_dfs(df_list, sheets, file_name, spaces):
         col = col + len(dataframe.columns) + spaces + 1
     writer.save()
 
-def execute_low_level(command, *args, **kwargs):
+def execute_low_level(loop, sleep_sec, command, *args, **kwargs):
     connection = redis.Connection(**kwargs)
     try:
         connection.connect()
-        for i in range(750):
-            time.sleep(.04)
+        for i in range(loop):
+            time.sleep(sleep_sec)
             connection.send_command(command, *args)
 
             response = connection.read_response()
