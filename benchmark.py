@@ -83,11 +83,12 @@ class benchmark:
         self.client.slowlog_reset()
 
     def run(self):
-        self.redis_commandset(self.client, self.test_time).start()
+        self.redis_commandset(self.redis_server, self.client, self.test_time).start()
 
 class commandset:
 
-    def __init__(self, client, test_time):
+    def __init__(self, redis_server, client, test_time):
+        self.redis_server = redis_server
         self.client = client
         self.test_time = test_time
 
@@ -111,6 +112,21 @@ class send_evalsha(commandset):
         while time.time() < timeout_start + self.test_time:
             self.client.evalsha(send_evalsha.script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000)
 
+class send_evalsha_no_pool(commandset):
+    script=''
+    script_id=''
+    def load_script(script):
+        send_evalsha.script = script
+
+    def start(self):
+        send_evalsha.script_id = self.client.script_load(send_evalsha.script)
+        self.client.set("ratelimit_9456909_POST/v1/order/orders/place", 1000)
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            time.sleep(0.4)
+            execute_low_level('evalsha', send_evalsha.script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
+
+
 class send_set_randomkey(commandset):
 
     def start(self):
@@ -131,3 +147,18 @@ def multiple_dfs(df_list, sheets, file_name, spaces):
         col = col + len(dataframe.columns) + spaces + 1
     writer.save()
 
+def execute_low_level(command, *args, **kwargs):
+    connection = redis.Connection(**kwargs)
+    try:
+        connection.connect()
+        for i in range(5000):
+            time.sleep(.005)
+            connection.send_command(command, *args)
+
+            response = connection.read_response()
+            if command in redis.Redis.RESPONSE_CALLBACKS:
+                return redis.Redis.RESPONSE_CALLBACKS[command](response)
+
+    finally:
+        connection.send_command('quit')
+        del connection

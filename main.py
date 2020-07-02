@@ -8,10 +8,10 @@ from statistics import mean
 
 import pandas as pd
 
-from benchmark import benchmark, send_psetex, send_evalsha, create_dir, send_set_randomkey, multiple_dfs
+from benchmark import benchmark, send_psetex, send_evalsha, create_dir, send_set_randomkey, multiple_dfs, send_evalsha_no_pool
 from awsapi import get_metric_average
 
-benchmark_dict = {'send_psetex': send_psetex, 'send_evalsha': send_evalsha, 'send_set_randomkey': send_set_randomkey}
+benchmark_dict = {'send_psetex': send_psetex, 'send_evalsha': send_evalsha, 'send_set_randomkey': send_set_randomkey, 'send_evalsha_no_pool': send_evalsha_no_pool}
 
 parser = argparse.ArgumentParser(description='Redis benchmark')
 
@@ -69,10 +69,14 @@ if __name__ == '__main__':
     EngineCPUUtilization = get_metric_average(server.split('.')[0], 'EngineCPUUtilization', start_time_datetime, end_time_datetime)
     NetworkBytesIn = get_metric_average(server.split('.')[0], 'NetworkBytesIn', start_time_datetime, end_time_datetime)
     NetworkBytesOut = get_metric_average(server.split('.')[0], 'NetworkBytesOut', start_time_datetime, end_time_datetime)
+    CurrConnections = get_metric_average(server.split('.')[0], 'CurrConnections', start_time_datetime, end_time_datetime)
+    NewConnections = get_metric_average(server.split('.')[0], 'NewConnections', start_time_datetime, end_time_datetime)
     NetworkBytesIn_avg = mean([data['Average'] for data in NetworkBytesIn['Datapoints']])
     NetworkBytesOut_avg = mean([data['Average'] for data in NetworkBytesOut['Datapoints']])
     EngineCPUUtilization_avg = mean([data['Average'] for data in EngineCPUUtilization['Datapoints']])
-    system_metrics_df = pd.DataFrame([EngineCPUUtilization_avg, NetworkBytesIn_avg, NetworkBytesOut_avg], index=['EngineCPUUtilization', 'NetworkBytesIn_avg', 'NetworkBytesOut_avg'])
+    NewConnections_avg = mean([data['Average'] for data in NewConnections['Datapoints']])
+    CurrConnections_avg = mean([data['Average'] for data in CurrConnections['Datapoints']])
+    system_metrics_df = pd.DataFrame([EngineCPUUtilization_avg, NetworkBytesIn_avg, NetworkBytesOut_avg, NewConnections_avg, CurrConnections_avg], index=['EngineCPUUtilization', 'NetworkBytesIn_avg', 'NetworkBytesOut_avg', 'NewConnections_avg', 'CurrConnections_avg'])
     time_df = pd.DataFrame([start_time, end_time, test_time], index=['start_time', 'end_time', 'test_time'])
     commandstats_df_end = bh.get_commandstats()
     commandstats_df_diff = commandstats_df_end - commandstats_df_begin
