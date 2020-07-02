@@ -118,6 +118,7 @@ class send_evalsha(commandset):
         self.client.set("ratelimit_9456909_POST/v1/order/orders/place", 1000)
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
+            time.sleep(0.1)
             self.client.evalsha(send_evalsha.script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000)
 
 class send_evalsha_no_pool(commandset):
