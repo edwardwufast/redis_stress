@@ -151,8 +151,8 @@ def execute_low_level(command, *args, **kwargs):
     connection = redis.Connection(**kwargs)
     try:
         connection.connect()
-        for i in range(1500):
-            time.sleep(.02)
+        for i in range(750):
+            time.sleep(.04)
             connection.send_command(command, *args)
 
             response = connection.read_response()
