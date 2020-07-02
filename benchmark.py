@@ -65,7 +65,7 @@ class benchmark:
         return commandstats_df
 
     def get_slow(self):
-        slow_result = self.client.slowlog_get()
+        slow_result = self.client.slowlog_get(num=1000)
         for slowlog in slow_result:
              slowlog['start_time']= datetime.utcfromtimestamp(int(slowlog['start_time'])).strftime('%Y-%m-%d %H:%M:%S UTC')
         slowlog_df = pd.DataFrame(slow_result)
