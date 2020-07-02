@@ -98,7 +98,15 @@ class send_psetex(commandset):
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             self.client.psetex('key', 1000, 'hello')
+
+class send_psetex_no_pool(commandset): 
     
+    def start(self):
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            time.sleep(0.4)
+            execute_low_level('psetex', 'key', 1000, 'hello', host=self.redis_server, port=6379)
+
 class send_evalsha(commandset):
     script=''    
     script_id=''

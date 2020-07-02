@@ -8,10 +8,10 @@ from statistics import mean
 
 import pandas as pd
 
-from benchmark import benchmark, send_psetex, send_evalsha, create_dir, send_set_randomkey, multiple_dfs, send_evalsha_no_pool
+from benchmark import benchmark, send_psetex, send_evalsha, create_dir, send_set_randomkey, multiple_dfs, send_evalsha_no_pool, send_psetex_no_pool
 from awsapi import get_metric_average
 
-benchmark_dict = {'send_psetex': send_psetex, 'send_evalsha': send_evalsha, 'send_set_randomkey': send_set_randomkey, 'send_evalsha_no_pool': send_evalsha_no_pool}
+benchmark_dict = {'send_psetex': send_psetex, 'send_evalsha': send_evalsha, 'send_set_randomkey': send_set_randomkey, 'send_evalsha_no_pool': send_evalsha_no_pool, 'send_psetex_no_pool': send_psetex_no_pool}
 
 parser = argparse.ArgumentParser(description='Redis benchmark')
 
