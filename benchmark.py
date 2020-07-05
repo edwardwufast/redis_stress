@@ -19,6 +19,12 @@ class benchmark:
         self.test_time = test_time
         self.redis_commandset = redis_commandset
         self.redis_server = redis_server 
+        self.lua_script = None
+
+    def load_lua_script(self, script_path):
+        with open(script_path) as script_fd:
+            script = script_fd.read()
+        self.lua_script = script
 
     def init_client(self):
         pool = redis.ConnectionPool(host=self.redis_server, port=6379, db=0)
@@ -83,15 +89,16 @@ class benchmark:
         self.client.slowlog_reset()
 
     def run(self):
-        self.redis_commandset(self.redis_server, self.client, self.test_time).start()
+        self.redis_commandset(self.redis_server, self.client, self.test_time, lua_script=self.lua_script).start()
 
 class commandset:
 
-    def __init__(self, redis_server, client, test_time):
+    def __init__(self, redis_server, client, test_time, lua_script=None):
         self.redis_server = redis_server
         self.client = client
         self.test_time = test_time
-
+        self.lua_script = lua_script
+       
 class send_psetex(commandset):
 
     def start(self):
@@ -108,32 +115,24 @@ class send_psetex_no_pool(commandset):
             execute_low_level(750, 0.1, 'psetex', 'key', 1000, 'hello', host=self.redis_server, port=6379)
 
 class send_evalsha(commandset):
-    script=''    
-    script_id=''
-    def load_script(script):
-        send_evalsha.script = script
 
     def start(self):
-        send_evalsha.script_id = self.client.script_load(send_evalsha.script)
+        script_id = self.client.script_load(self.lua_script)
         self.client.set("ratelimit_9456909_POST/v1/order/orders/place", 1000)
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             time.sleep(0.1)
-            self.client.evalsha(send_evalsha.script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000)
+            self.client.evalsha(script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000)
 
 class send_evalsha_no_pool(commandset):
-    script=''
-    script_id=''
-    def load_script(script):
-        send_evalsha.script = script
 
     def start(self):
-        send_evalsha.script_id = self.client.script_load(send_evalsha.script)
+        script_id = self.client.script_load(self.lua_script)
         self.client.set("ratelimit_9456909_POST/v1/order/orders/place", 1000)
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             time.sleep(0.4)
-            execute_low_level(750, 0.04, 'evalsha', send_evalsha.script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
+            execute_low_level(750, 0.04, 'evalsha', script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
 
 
 class send_set_randomkey(commandset):

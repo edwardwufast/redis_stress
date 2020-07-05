@@ -8,10 +8,11 @@ from statistics import mean
 
 import pandas as pd
 
-from benchmark import benchmark, send_psetex, send_evalsha, create_dir, send_set_randomkey, multiple_dfs, send_evalsha_no_pool, send_psetex_no_pool
+import benchmark
+from benchmark import create_dir, multiple_dfs, execute_low_level
 from awsapi import get_metric_average
 
-benchmark_dict = {'send_psetex': send_psetex, 'send_evalsha': send_evalsha, 'send_set_randomkey': send_set_randomkey, 'send_evalsha_no_pool': send_evalsha_no_pool, 'send_psetex_no_pool': send_psetex_no_pool}
+benchmark_dict = {cls.__name__:cls for cls in benchmark.commandset.__subclasses__()}
 
 parser = argparse.ArgumentParser(description='Redis benchmark')
 
@@ -22,7 +23,7 @@ parser.add_argument('-t', metavar='test_time', type=int, required=True)
 parser.add_argument('-b', metavar='benchmark', choices=[key for key in benchmark_dict], required=True)
 parser.add_argument('-C', help='cluster mode', default=False, action='store_true', required=False)
 parser.add_argument('-l', metavar='lua script file path for send_evalsha', required=False)
-parser.add_argument('-n', metavar='excel tab name', required=True)
+parser.add_argument('-n', metavar='excel tab name and file name', required=True)
 
 args = parser.parse_args()
 
@@ -36,21 +37,15 @@ if __name__ == '__main__':
     cluster_mode_enable = args.C
     script_path = args.l
     tab_name = args.n
-    if benchmark_test == send_evalsha:
-        if not script_path:
-            print("Please provide lua script in -l option")
-            raise
-        else:
-            with open(script_path) as script_fd:
-                script = script_fd.read()
-            send_evalsha.load_script(script)
 
     create_dir(record_directory)
-    bh = benchmark(record_directory, test_time, benchmark_test, server)
+    bh = benchmark.benchmark(record_directory, test_time, benchmark_test, server)
     if cluster_mode_enable:
         bh.init_cluster_client()
     else:
         bh.init_client()
+    if script_path:
+        bh.load_lua_script(script_path)
     bh.reset_slow()
     start_time = bh.get_time()
     commandstats_df_begin = bh.get_commandstats()
