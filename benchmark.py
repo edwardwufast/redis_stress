@@ -134,6 +134,14 @@ class send_evalsha_no_pool(commandset):
             time.sleep(0.4)
             execute_low_level(750, 0.04, 'evalsha', script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
 
+class send_evalsha_no_pool_v2(commandset):
+
+    def start(self):
+        script_id = self.client.script_load(self.lua_script)
+        self.client.set("ratelimit_9456909_POST/v1/order/orders/place", 1000)
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            execute_low_level(400, 0.1, 'evalsha', script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
 
 class send_set_randomkey(commandset):
 
