@@ -66,17 +66,11 @@ if __name__ == '__main__':
     end_time = bh.get_time()
     start_time_datetime = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
     end_time_datetime = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
-    EngineCPUUtilization = get_metric_average(server.split('.')[0], 'EngineCPUUtilization', start_time_datetime, end_time_datetime)
-    NetworkBytesIn = get_metric_average(server.split('.')[0], 'NetworkBytesIn', start_time_datetime, end_time_datetime)
-    NetworkBytesOut = get_metric_average(server.split('.')[0], 'NetworkBytesOut', start_time_datetime, end_time_datetime)
-    CurrConnections = get_metric_average(server.split('.')[0], 'CurrConnections', start_time_datetime, end_time_datetime)
-    NewConnections = get_metric_average(server.split('.')[0], 'NewConnections', start_time_datetime, end_time_datetime)
-    NetworkBytesIn_avg = mean([data['Average'] for data in NetworkBytesIn['Datapoints']])
-    NetworkBytesOut_avg = mean([data['Average'] for data in NetworkBytesOut['Datapoints']])
-    EngineCPUUtilization_avg = mean([data['Average'] for data in EngineCPUUtilization['Datapoints']])
-    NewConnections_avg = mean([data['Average'] for data in NewConnections['Datapoints']])
-    CurrConnections_avg = mean([data['Average'] for data in CurrConnections['Datapoints']])
-    system_metrics_df = pd.DataFrame([EngineCPUUtilization_avg, NetworkBytesIn_avg, NetworkBytesOut_avg, NewConnections_avg, CurrConnections_avg], index=['EngineCPUUtilization', 'NetworkBytesIn_avg', 'NetworkBytesOut_avg', 'NewConnections_avg', 'CurrConnections_avg'])
+    wanted_cloudwatch_metrics = ['EngineCPUUtilization', 'NetworkBytesIn', 'NetworkBytesOut', 'NewConnections', 'CurrConnections']
+    cloudwatch_metrics = [get_metric_average(server.split('.')[0], metric, start_time_datetime, end_time_datetime) for metric in wanted_cloudwatch_metrics]
+    cloudwatch_metrics[0]['Label']
+    cloudwatch_metrics_avg = {metric['Label']:mean([data['Average'] for data in metric['Datapoints']]) for metric in cloudwatch_metrics}
+    system_metrics_df = pd.DataFrame(data=cloudwatch_metrics_avg, index={0}).T
     time_df = pd.DataFrame([start_time, end_time, test_time], index=['start_time', 'end_time', 'test_time'])
     commandstats_df_end = bh.get_commandstats()
     commandstats_df_diff = commandstats_df_end - commandstats_df_begin
