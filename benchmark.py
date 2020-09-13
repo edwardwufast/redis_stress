@@ -4,6 +4,7 @@ import time
 import threading
 import logging
 import random
+import string
 from datetime import datetime
 
 import redis
@@ -60,6 +61,7 @@ class benchmark:
     
 
     def get_info(self):
+        # for cluster mode disable only
         info_result = self.client.info()
         info_result.pop('db0')
         info_df = pd.DataFrame(info_result, index={"value"}).transpose()
@@ -150,6 +152,15 @@ class send_set_randomkey(commandset):
         while time.time() < timeout_start + self.test_time:
             random_number = random.random()
             self.client.set('key:' + str(random_number), random_number)
+
+class send_set_randomkey_one_MB(commandset):
+    
+    def start(self):
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            value = ''.join(random.choice(string.ascii_lowercase) for x in range(1048576))
+            key = "key" + value[:10]
+            self.client.set(key, value)
 
 def create_dir(directory):
     if not os.path.exists(directory):

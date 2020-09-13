@@ -54,28 +54,30 @@ if __name__ == '__main__':
         x = threading.Thread(target=bh.run)
         threads.append(x)
         x.start()
-    time.sleep(10)
-    #info_df_middle = bh.get_info()
-    for index, thread in enumerate(threads):
-        thread.join()
-    end_time = bh.get_time()
-    start_time_datetime = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-    end_time_datetime = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
-    try:
-        wanted_cloudwatch_metrics = ['EngineCPUUtilization', 'NetworkBytesIn', 'NetworkBytesOut', 'NewConnections', 'CurrConnections']
-        cloudwatch_metrics = [get_metric_average(server.split('.')[0], metric, start_time_datetime, end_time_datetime) for metric in wanted_cloudwatch_metrics]
-        cloudwatch_metrics[0]['Label']
-        cloudwatch_metrics_avg = {metric['Label']:mean([data['Average'] for data in metric['Datapoints']]) for metric in cloudwatch_metrics}
-        system_metrics_df = pd.DataFrame(data=cloudwatch_metrics_avg, index={0}).T
-    except Exception as error:
-        system_metrics_df = pd.DataFrame(data=[error], index={0}).T
-        
-    time_df = pd.DataFrame([start_time, end_time, test_time], index=['start_time', 'end_time', 'test_time'])
-    commandstats_df_end = bh.get_commandstats()
-    commandstats_df_diff = commandstats_df_end - commandstats_df_begin
-    commandstats_df_report = pd.concat([commandstats_df_begin, commandstats_df_end, commandstats_df_diff], axis=1, sort=False)
-    slow_df = bh.get_slow()
-    multiple_dfs([time_df, system_metrics_df, slow_df, commandstats_df_report, info_df_middle], tab_name, record_directory + f'/{tab_name}.xlsx', 3)
+
+    if not cluster_mode_enable:
+        time.sleep(10)
+        info_df_middle = bh.get_info()
+        for index, thread in enumerate(threads):
+            thread.join()
+        end_time = bh.get_time()
+        start_time_datetime = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        end_time_datetime = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+        try:
+            wanted_cloudwatch_metrics = ['EngineCPUUtilization', 'NetworkBytesIn', 'NetworkBytesOut', 'NewConnections', 'CurrConnections']
+            cloudwatch_metrics = [get_metric_average(server.split('.')[0], metric, start_time_datetime, end_time_datetime) for metric in wanted_cloudwatch_metrics]
+            cloudwatch_metrics[0]['Label']
+            cloudwatch_metrics_avg = {metric['Label']:mean([data['Average'] for data in metric['Datapoints']]) for metric in cloudwatch_metrics}
+            system_metrics_df = pd.DataFrame(data=cloudwatch_metrics_avg, index={0}).T
+        except Exception as error:
+            system_metrics_df = pd.DataFrame(data=[error], index={0}).T
+            
+        time_df = pd.DataFrame([start_time, end_time, test_time], index=['start_time', 'end_time', 'test_time'])
+        commandstats_df_end = bh.get_commandstats()
+        commandstats_df_diff = commandstats_df_end - commandstats_df_begin
+        commandstats_df_report = pd.concat([commandstats_df_begin, commandstats_df_end, commandstats_df_diff], axis=1, sort=False)
+        slow_df = bh.get_slow()
+        multiple_dfs([time_df, system_metrics_df, slow_df, commandstats_df_report, info_df_middle], tab_name, record_directory + f'/{tab_name}.xlsx', 3)
 
 
 
