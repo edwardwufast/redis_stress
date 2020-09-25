@@ -145,6 +145,13 @@ class send_evalsha_no_pool_v2(commandset):
         while time.time() < timeout_start + self.test_time:
             execute_low_level(400, 0.1, 'evalsha', script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
 
+class kill_replica(commandset):
+
+    def start(self):
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            execute_low_level(400, 0, 'get','key:0.5071153217346777' , host=self.redis_server, port=6379)
+
 class send_set_randomkey(commandset):
 
     def start(self):
@@ -224,10 +231,10 @@ class cluster_slot_test(commandset):
                 for node in cluster_nodes:
                     print(node)
                     f.write(str(node) + '\n')
-                DNS_master_to_recover = [ ip.to_text() for ip in self.dns.resolver.query(self.master_DNS, 'A')][0]
+                DNS_master_to_recover = [ ip.to_text() for ip in self.dns.resolver.resolve(self.master_DNS, 'A')][0]
                 print(f"DNS_master_to_recover: {DNS_master_to_recover}")
                 f.write(f"DNS_master_to_recover: {DNS_master_to_recover}\n")
-                DNS_replica_tobe_master = [ ip.to_text() for ip in self.dns.resolver.query(self.replica_DNS, 'A')][0]
+                DNS_replica_tobe_master = [ ip.to_text() for ip in self.dns.resolver.resolve(self.replica_DNS, 'A')][0]
                 print(f"DNS_replica_tobe_master: {DNS_replica_tobe_master}")
                 f.write(f"DNS_replica_tobe_master: {DNS_replica_tobe_master}\n\n")
                 print('\n')
@@ -258,6 +265,7 @@ def execute_low_level(loop, sleep_sec, command, *args, **kwargs):
         connection.connect()
         for i in range(loop):
             time.sleep(sleep_sec)
+            connection.send_command('readonly')
             connection.send_command(command, *args)
 
             response = connection.read_response()
