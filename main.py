@@ -3,6 +3,7 @@
 import time
 import argparse
 import threading
+import multiprocessing
 from datetime import datetime
 from statistics import mean 
 
@@ -51,15 +52,16 @@ if __name__ == '__main__':
     commandstats_df_begin = bh.get_commandstats()
     threads = list()
     for index in range(connection):
-        x = threading.Thread(target=bh.run)
+        x = multiprocessing.Process(target=bh.run)
         threads.append(x)
         x.start()
 
+#    if not cluster_mode_enable:
+#        time.sleep(10)
+#        info_df_middle = bh.get_info()
+    for index, thread in enumerate(threads):
+        thread.join()
     if not cluster_mode_enable:
-        time.sleep(10)
-        info_df_middle = bh.get_info()
-        for index, thread in enumerate(threads):
-            thread.join()
         end_time = bh.get_time()
         start_time_datetime = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
         end_time_datetime = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")

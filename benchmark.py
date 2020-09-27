@@ -150,7 +150,7 @@ class kill_replica(commandset):
     def start(self):
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
-            execute_low_level(400, 0, 'get','key:0.5071153217346777' , host=self.redis_server, port=6379)
+            execute_low_level_v2(1, 0, 'get','key:0.5071153217346777' , host=self.redis_server, port=6379)
 
 class send_set_randomkey(commandset):
 
@@ -265,7 +265,6 @@ def execute_low_level(loop, sleep_sec, command, *args, **kwargs):
         connection.connect()
         for i in range(loop):
             time.sleep(sleep_sec)
-            connection.send_command('readonly')
             connection.send_command(command, *args)
 
             response = connection.read_response()
@@ -275,3 +274,26 @@ def execute_low_level(loop, sleep_sec, command, *args, **kwargs):
     finally:
         connection.send_command('quit')
         del connection
+
+
+def execute_low_level_v2(loop, sleep_sec, command, *args, **kwargs):
+    connection = redis.Connection(**kwargs)
+    try:
+        connection.connect()
+        for i in range(loop):
+            time.sleep(sleep_sec)
+            connection.send_command("readonly")
+            #response = connection.read_response()
+            #print(response)
+            connection.send_command(command, *args)
+            #response = connection.read_response()
+            #print(response)
+            connection.disconnect()
+            if command in redis.Redis.RESPONSE_CALLBACKS:
+                return redis.Redis.RESPONSE_CALLBACKS[command](response)
+    finally:            
+        del connection
+
+
+
+
