@@ -33,7 +33,7 @@ class benchmark:
 
     def init_cluster_client(self):
         startup_nodes = [{"host": self.redis_server, "port": "6379"}]
-        self.client = RedisCluster(startup_nodes=startup_nodes, decode_responses=True, skip_full_coverage_check=True)
+        self.client = RedisCluster(startup_nodes=startup_nodes, decode_responses=True, skip_full_coverage_check=True, readonly_mode=True)
 
 
     def save_info(self, filename):
@@ -145,12 +145,20 @@ class send_evalsha_no_pool_v2(commandset):
         while time.time() < timeout_start + self.test_time:
             execute_low_level(400, 0.1, 'evalsha', script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
 
-class kill_replica(commandset):
+class high_newconnections(commandset):
 
     def start(self):
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             execute_low_level_v2(1, 0, 'get','key:0.5071153217346777' , host=self.redis_server, port=6379)
+
+class high_enginecpu(commandset):
+    
+    def start(self):
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            self.client.get('key:0.5071153217346777')
+        
 
 class send_set_randomkey(commandset):
 
