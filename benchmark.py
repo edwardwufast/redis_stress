@@ -100,6 +100,8 @@ class commandset:
         self.client = client
         self.test_time = test_time
         self.lua_script = lua_script
+
+            
        
 class send_psetex(commandset):
 
@@ -144,6 +146,14 @@ class send_evalsha_no_pool_v2(commandset):
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             execute_low_level(400, 0.1, 'evalsha', script_id, 0, "ratelimit_9456909_POST/v1/order/orders/place", 200, 1, 2000, host=self.redis_server, port=6379)
+
+class send_evalsha_loop(commandset):
+
+    def start(self):
+        script_id = self.client.script_load(self.lua_script)
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            execute_low_level_v2(1, 0, 'evalsha', script_id, 'key:0.5071153217346777' , host=self.redis_server, port=6379)
 
 class high_newconnections(commandset):
 
@@ -296,11 +306,13 @@ def execute_low_level_v2(loop, sleep_sec, command, *args, **kwargs):
             connection.send_command(command, *args)
             #response = connection.read_response()
             #print(response)
-            connection.disconnect()
+            #connection.disconnect()
             if command in redis.Redis.RESPONSE_CALLBACKS:
                 return redis.Redis.RESPONSE_CALLBACKS[command](response)
-    finally:            
-        del connection
+    
+    finally: 
+        pass           
+    #   del connection
 
 
 
