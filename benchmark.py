@@ -168,6 +168,7 @@ class high_enginecpu(commandset):
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             self.client.get('key:0.5071153217346777')
+            self.client.keys('*')
         
 
 class send_set_randomkey(commandset):
