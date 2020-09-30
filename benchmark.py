@@ -5,6 +5,8 @@ import threading
 import logging
 import random
 import string
+import asyncio
+
 from datetime import datetime
 
 import redis
@@ -263,9 +265,6 @@ class cluster_slot_test(commandset):
             time.sleep(1)
         
             
-            
-
-
 def create_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
