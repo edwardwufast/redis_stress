@@ -208,57 +208,124 @@ class cluster_slot_test(commandset):
     
     import dns.resolver
 
-    master_DNS = 'cluster-mode-enable-0002-003.ryi7vr.0001.apne1.cache.amazonaws.com'
     replica_DNS = 'cluster-mode-enable-0002-001.ryi7vr.0001.apne1.cache.amazonaws.com'
+    replica_IP = '172.31.46.202'
+    master_DNS = 'cluster-mode-enable-0002-003.ryi7vr.0001.apne1.cache.amazonaws.com'
+    master_IP = '172.31.22.206'
     key = 'key:0.5071153217346777'
     log = 'log'
+    configuration_DNS = 'cluster-mode-enable.ryi7vr.clustercfg.apne1.cache.amazonaws.com'
 
     def init_client(self, host):
         startup_nodes = [{"host": host, "port": "6379"}]
         return RedisCluster(startup_nodes=startup_nodes, decode_responses=True, skip_full_coverage_check=True, readonly_mode=True)
+
+    def execute_low_level_connection(self, command, *args, **kwargs):
+        connection = redis.Connection(**kwargs)
+        try:
+            connection.connect()
+            connection.send_command("readonly")
+            connection.read_response()
+            connection.send_command(command, *args)
+            response = connection.read_response()
+            return response
+        finally:
+            del connection
 
     def start(self):
         timeout_start = time.time()
         master = self.init_client(self.master_DNS)
         replica = self.init_client(self.replica_DNS)
         
-        f = open(self.log, "w+")
 
         
         while time.time() < timeout_start + self.test_time:
             try:
+                f = open(self.log, "a+")
                 current_time = datetime.utcnow()
                 f.write(str(current_time) + '\n')
                 print(current_time)
-                ping_response = replica.ping()
-                print(ping_response)
-                f.write(str(ping_response) + '\n')
-                get_response = replica.get(self.key)
-                print(f"replica: {get_response}")
-                f.write(f"replica: {get_response}\n")
+
+                #ping_response = replica.ping()
+                #print(ping_response)
+                #f.write(str(ping_response) + '\n')
                 try:
-                    master_get_response = master.get(self.key)
+                    print("start get_response_replica")
+                    get_response_replica = self.execute_low_level_connection("get", self.key, host=self.replica_IP, socket_connect_timeout=5)
+                    print(f"replica: {get_response_replica}")
+                    f.write(f"replica: {get_response_replica}\n")
+                except Exception as e:
+                    print(e)
+                    f.write(str(e) + '\n')
+                    pass
+
+                try:
+                    print("start master_get_response")
+                    master_get_response = self.execute_low_level_connection("get", self.key, host=self.master_IP, socket_connect_timeout=5)
                     print(f"master: {master_get_response}")
                     f.write(f"master: {master_get_response}\n")
                 except Exception as e:
                     print(e)
                     f.write(str(e) + '\n')
                     pass
-                cluster_slots = replica.cluster_slots()
-                print(cluster_slots)
-                f.write(str(cluster_slots) + '\n')
-                cluster_nodes = replica.cluster_nodes()
-                [ k.pop('slots') for k in cluster_nodes ]
-                for node in cluster_nodes:
-                    print(node)
-                    f.write(str(node) + '\n')
+
+                try:
+                    print("start cluster_slots")
+                    cluster_slots = self.execute_low_level_connection("cluster slots", host=self.replica_IP, socket_connect_timeout=5)
+                    print(cluster_slots)
+                    f.write(str(cluster_slots) + '\n')
+                except Exception as e:
+                    print(e)
+                    f.write(str(e) + '\n')
+                    pass
+
+                try:
+                    print("start cluster_nodes")
+                    cluster_nodes = self.execute_low_level_connection("cluster nodes", host=self.replica_IP, socket_connect_timeout=5)
+                #[ k.pop('slots') for k in cluster_nodes ]
+                #for node in cluster_nodes:
+                #    print(node)
+                #    f.write(str(node) + '\n')
+                    print(str(cluster_nodes))
+                    f.write(str(cluster_nodes) + '\n')
+                except Exception as e:
+                    print(e)
+                    f.write(str(e) + '\n')
+                    pass
+                
+                try:
+                    print("start replica_replication_info")
+                    replica_replication_info = self.execute_low_level_connection("info replication", host=self.replica_IP, socket_connect_timeout=5)
+                    print("replica_replication_info: " + str(replica_replication_info) + '\n')
+                    f.write(f"replica_replication_info: " + str(replica_replication_info) + "\n")
+                except Exception as e:
+                    print(e)
+                    f.write(str(e) + '\n')
+                    pass
+
+                try:
+                    print("start master_replication_info")
+                    master_replication_info = self.execute_low_level_connection("info replication", host=self.master_IP, socket_connect_timeout=5)
+                    print("master_replication_info: " + str(master_replication_info)+ '\n')
+                    f.write(f"master_replication_info: {str(master_replication_info)}\n")
+                except Exception as e:
+                    print(e)
+                    f.write(str(e) + '\n')
+                    pass
+
                 DNS_master_to_recover = [ ip.to_text() for ip in self.dns.resolver.resolve(self.master_DNS, 'A')][0]
                 print(f"DNS_master_to_recover: {DNS_master_to_recover}")
                 f.write(f"DNS_master_to_recover: {DNS_master_to_recover}\n")
+
                 DNS_replica_tobe_master = [ ip.to_text() for ip in self.dns.resolver.resolve(self.replica_DNS, 'A')][0]
                 print(f"DNS_replica_tobe_master: {DNS_replica_tobe_master}")
-                f.write(f"DNS_replica_tobe_master: {DNS_replica_tobe_master}\n\n")
-                print('\n')
+                f.write(f"DNS_replica_tobe_master: {DNS_replica_tobe_master}\n")
+
+                DNS_configuration = [ ip.to_text() for ip in self.dns.resolver.resolve(self.configuration_DNS, 'A')]
+                print(f"DNS_configuration_endpoint: {DNS_configuration}\n")
+                f.write(f"DNS_configuration_endpoint: {DNS_configuration}\n\n")
+                f.close()
+                
             except Exception as e:
                 print(e)
                 pass
