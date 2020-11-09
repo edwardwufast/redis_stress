@@ -72,9 +72,9 @@ class benchmark:
 
     def get_info_cluster(self):
         # for cluster mode enable only
-        import pdb;pdb.set_trace() 
         info_result = self.client.info()
-        return info_result
+        info_df = pd.DataFrame.from_dict(info_result)
+        return info_df
 
 
     def get_commandstats(self):
@@ -90,6 +90,9 @@ class benchmark:
         return slowlog_df
 
     def get_slow_cluster(self):
+        # need to edit  File "/home/ec2-user/.pyenv/versions/env/lib/python3.8/site-packages/rediscluster/client.py", line 512, in _merge_result
+        #return self.result_callbacks[command](command, res, **kwargs) => return self.result_callbacks[command](command, res)
+        # I submited an issue to https://github.com/Grokzen/redis-py-cluster/issues/415
         slow_result = self.client.slowlog_get(num=1000)
         for host, slowlogs in slow_result.items():
             for slowlog in slowlogs:

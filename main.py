@@ -23,6 +23,7 @@ parser.add_argument('-d', metavar='record_directory', required=True)
 parser.add_argument('-t', metavar='test_time', type=int, required=True)
 parser.add_argument('-b', metavar='benchmark', choices=[key for key in benchmark_dict], required=True, help=f"Avalible benchmark: {[key for key in benchmark_dict]}")
 parser.add_argument('-C', help='cluster mode', default=False, action='store_true', required=False)
+parser.add_argument('-r', help='reset slowlog', default=False, action='store_true', required=False)
 parser.add_argument('-l', metavar='lua script file path for send_evalsha', required=False)
 parser.add_argument('-n', metavar='excel tab name and file name', required=True)
 
@@ -49,6 +50,7 @@ if __name__ == '__main__':
     script_path = args.l
     tab_name = args.n
     other_args_dict = args.my_dict
+    reset_slowlog = args.r
 
     create_dir(record_directory)
     bh = benchmark.benchmark(record_directory, test_time, benchmark_test, server, other_args_dict=other_args_dict)
@@ -58,7 +60,8 @@ if __name__ == '__main__':
         bh.init_client()
     if script_path:
         bh.load_lua_script(script_path)
-    #bh.reset_slow()
+    if reset_slowlog:
+        bh.reset_slow()
     start_time = bh.get_time()
     commandstats_df_begin = bh.get_commandstats()
     threads = list()
@@ -67,12 +70,11 @@ if __name__ == '__main__':
         threads.append(x)
         x.start()
 
-#    if not cluster_mode_enable:
-#        time.sleep(10)
-#        info_df_middle = bh.get_info()
-#   if cluster_mode_enable:
-#        time.sleep(10)
-#        info_df_middle = bh.get_info_cluster()
+    if not cluster_mode_enable:
+        time.sleep(10)
+        info_df_middle = bh.get_info()
+    if cluster_mode_enable:
+        info_df_middle = bh.get_info_cluster()
     for index, thread in enumerate(threads):
         thread.join()
     if True:
@@ -111,7 +113,6 @@ if __name__ == '__main__':
             commandstats_df_diff = commandstats_df_end - commandstats_df_begin
             slow_df = bh.get_slow()
         commandstats_df_report = pd.concat([commandstats_df_begin, commandstats_df_end, commandstats_df_diff], axis=1, sort=False)
-        #multiple_dfs([time_df, system_metrics_df, slow_df, commandstats_df_report, info_df_middle], tab_name, record_directory + f'/{tab_name}.xlsx', 3)
-        multiple_dfs([time_df, system_metrics_df, commandstats_df_report, slow_df], tab_name, record_directory + f'/{tab_name}.xlsx', 3)
+        multiple_dfs([time_df, system_metrics_df, slow_df, commandstats_df_report, info_df_middle], tab_name, record_directory + f'/{tab_name}.xlsx', 3)
 
 
