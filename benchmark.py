@@ -17,12 +17,13 @@ from rediscluster import RedisCluster
 
 class benchmark:
 
-    def __init__(self, record_dir, test_time, redis_commandset, redis_server):
+    def __init__(self, record_dir, test_time, redis_commandset, redis_server, other_args_dict={}):
         self.record_dir = record_dir
         self.test_time = test_time
         self.redis_commandset = redis_commandset
         self.redis_server = redis_server 
         self.lua_script = None
+        self.other_args_dict = other_args_dict
 
     def load_lua_script(self, script_path):
         with open(script_path) as script_fd:
@@ -69,6 +70,13 @@ class benchmark:
         info_df = pd.DataFrame(info_result, index={"value"}).transpose()
         return info_df
 
+    def get_info_cluster(self):
+        # for cluster mode enable only
+        import pdb;pdb.set_trace() 
+        info_result = self.client.info()
+        return info_result
+
+
     def get_commandstats(self):
         commandstats_result = self.client.info(section='commandstats')
         commandstats_df = pd.DataFrame(commandstats_result).transpose()
@@ -80,6 +88,14 @@ class benchmark:
              slowlog['start_time']= datetime.utcfromtimestamp(int(slowlog['start_time'])).strftime('%Y-%m-%d %H:%M:%S UTC')
         slowlog_df = pd.DataFrame(slow_result)
         return slowlog_df
+
+    def get_slow_cluster(self):
+        slow_result = self.client.slowlog_get(num=1000)
+        for host, slowlogs in slow_result.items():
+            for slowlog in slowlogs:
+                slowlog['start_time']= datetime.utcfromtimestamp(int(slowlog['start_time'])).strftime('%Y-%m-%d %H:%M:%S UTC')
+        df = pd.DataFrame.from_dict(slow_result, orient='index')
+        return df.T 
 
     def save_slow(self, filename):
         with open(self.record_dir+"/" + filename, 'w+') as slow_file:
@@ -93,15 +109,16 @@ class benchmark:
         self.client.slowlog_reset()
 
     def run(self):
-        self.redis_commandset(self.redis_server, self.client, self.test_time, lua_script=self.lua_script).start()
+        self.redis_commandset(self.redis_server, self.client, self.test_time, lua_script=self.lua_script, other_args_dict=self.other_args_dict).start()
 
 class commandset:
 
-    def __init__(self, redis_server, client, test_time, lua_script=None):
+    def __init__(self, redis_server, client, test_time, lua_script=None, other_args_dict={}):
         self.redis_server = redis_server
         self.client = client
         self.test_time = test_time
         self.lua_script = lua_script
+        self.other_args_dict = other_args_dict
 
             
        
@@ -208,13 +225,22 @@ class cluster_slot_test(commandset):
     
     import dns.resolver
 
-    replica_DNS = 'cluster-mode-enable-0002-001.ryi7vr.0001.apne1.cache.amazonaws.com'
-    replica_IP = '172.31.46.202'
-    master_DNS = 'cluster-mode-enable-0002-003.ryi7vr.0001.apne1.cache.amazonaws.com'
-    master_IP = '172.31.22.206'
-    key = 'key:0.5071153217346777'
-    log = 'log'
-    configuration_DNS = 'cluster-mode-enable.ryi7vr.clustercfg.apne1.cache.amazonaws.com'
+    #replica_DNS = 'cluster-mode-enable-0002-001.ryi7vr.0001.apne1.cache.amazonaws.com'
+    #replica_IP = '172.31.46.202'
+    #master_DNS = 'cluster-mode-enable-0002-003.ryi7vr.0001.apne1.cache.amazonaws.com'
+    #master_IP = '172.31.22.206'
+    #key = 'key:0.5071153217346777'
+    #log = 'log'
+    #configuration_DNS = 'cluster-mode-enable.ryi7vr.clustercfg.apne1.cache.amazonaws.com'
+
+    def init_test(self):
+        self.replica_DNS = self.other_args_dict['replica_DNS']
+        self.replica_IP = self.other_args_dict['replica_IP']
+        self.master_DNS = self.other_args_dict['master_DNS']
+        self.master_IP = self.other_args_dict['master_IP']
+        self.key = self.other_args_dict['key']
+        self.log = self.other_args_dict['log']
+        self.configuration_DNS = self.other_args_dict['configuration_DNS']
 
     def init_client(self, host):
         startup_nodes = [{"host": host, "port": "6379"}]
@@ -233,6 +259,8 @@ class cluster_slot_test(commandset):
             del connection
 
     def start(self):
+        print("--key_pairs replica_DNS=,replica_IP=,master_DNS=,master_IP=,key=,log=,configuration_DNS=")
+        self.init_test()
         timeout_start = time.time()
         master = self.init_client(self.master_DNS)
         replica = self.init_client(self.replica_DNS)
@@ -246,9 +274,6 @@ class cluster_slot_test(commandset):
                 f.write(str(current_time) + '\n')
                 print(current_time)
 
-                #ping_response = replica.ping()
-                #print(ping_response)
-                #f.write(str(ping_response) + '\n')
                 try:
                     print("start get_response_replica")
                     get_response_replica = self.execute_low_level_connection("get", self.key, host=self.replica_IP, socket_connect_timeout=5)
