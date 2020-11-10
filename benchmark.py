@@ -358,7 +358,29 @@ class cluster_slot_test(commandset):
                 print(e)
                 pass
             time.sleep(1)
-        
+class slowlog_test_zoetop(commandset):
+
+    def init_and_get_master_ip(self):
+        self.client.set('key', 'value')
+        slot_num = self.client.cluster_keyslot('key')
+        cluster_slots = self.client.cluster_slots()
+        for slot in cluster_slots:
+            if slot_num in range(slot[0],slot[1]):
+                master_ip = cluster_slots[slot]['master'][0]
+        return master_ip
+
+    def init_client(self, redis_server):        
+        pool = redis.ConnectionPool(host=redis_server, port=6379, db=0)
+        client = redis.Redis(connection_pool=pool)
+        return client
+
+    def start(self):
+        master_IP = self.init_and_get_master_ip()
+        client = self.init_client(master_IP)
+        timeout_start = time.time()
+        while time.time() < timeout_start + self.test_time:
+            client.get('key')
+
             
 def create_dir(directory):
     if not os.path.exists(directory):
@@ -395,7 +417,7 @@ def execute_low_level_v2(loop, sleep_sec, command, *args, **kwargs):
         connection.connect()
         for i in range(loop):
             time.sleep(sleep_sec)
-            connection.send_command("readonly")
+            #connection.send_command("readonly")
             #response = connection.read_response()
             #print(response)
             connection.send_command(command, *args)
