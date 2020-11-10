@@ -361,8 +361,8 @@ class cluster_slot_test(commandset):
 class slowlog_test_zoetop(commandset):
 
     def init_and_get_master_ip(self):
-        self.client.set('key', 'value')
-        slot_num = self.client.cluster_keyslot('key')
+        #self.client.set('key', 'value')
+        slot_num = self.client.cluster_keyslot('memtier-200')
         cluster_slots = self.client.cluster_slots()
         for slot in cluster_slots:
             if slot_num in range(slot[0],slot[1]):
@@ -379,7 +379,7 @@ class slowlog_test_zoetop(commandset):
         client = self.init_client(master_IP)
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
-            client.get('key')
+            client.get('memtier-200')
 
             
 def create_dir(directory):
