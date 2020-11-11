@@ -377,10 +377,14 @@ class slowlog_test_zoetop(commandset):
     def start(self):
         master_IP = self.init_and_get_master_ip()
         client = self.init_client(master_IP)
+        eight_k_value = get_random_string(8192)
+        client.set('memtier-200', eight_k_value)
         timeout_start = time.time()
         while time.time() < timeout_start + self.test_time:
             client.get('memtier-200')
 
+def get_random_string(size):
+    return ''.join(random.choice(string.ascii_lowercase) for x in range(size))
             
 def create_dir(directory):
     if not os.path.exists(directory):
